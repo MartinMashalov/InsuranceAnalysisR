@@ -1,0 +1,144 @@
+---
+title: "Life Insurance Assigment 2 Group 5"
+output:
+  pdf_document: default
+  word_document: default
+---
+```{r install}
+library(ggplot2)
+library(gridExtra)
+#install.packages("tinytex")
+#tinytex::install_tinytex()
+```
+
+We imported the data as follows: Save a .txt file -> remove the title line of the text file -> Import Dataset (in RStudio) -> From Text (base) -> Seperator by Whitespaces -> use DATA object since file is named DATA.txt
+
+Our data is for Luxembourg. It includes missing values, therefore affecting the plots and calculations, and the data is for years 1960-2022.
+
+```{r setup, include=FALSE}
+Force_of_mortality_a = function(x, t, i, j){
+  subset_table = subset(DATA, DATA$Year == t)
+  return(-log(1-subset_table$qx[i:j]))
+}
+
+Force_of_mortality_b = function(x, t, i, j) {
+  subset_table = subset(DATA, DATA$Age == x)
+  return(-log(1-subset_table$qx[i:j]))
+}
+```
+
+Part A below
+
+```{r cars}
+# assume constant force of mortality 
+colors_years = c("1960" = 'black', "1970"='purple', "1980"='red', "1990"='blue', "2000"='green', "2010"='yellow', "2020"='orange')
+
+for (x in c(1960, 1970, 1980, 1990, 2000, 2010, 2020)) {
+  forces_of_mortality = Force_of_mortality_a(0, x, 1, 109)
+  print(forces_of_mortality)
+  if (x == 1960) {
+    plot(1:length(forces_of_mortality), log(forces_of_mortality), type = "l", xlab = "Year", col='black', ylab = "Force of Mortality", main= "Force of Mortality vs. Year for Ages 0-110", ylim=c(-10, 0))
+  }
+  else {
+    lines(1:length(forces_of_mortality), log(forces_of_mortality), type = "l", pch=18, col = colors_years[as.character(x)])
+  }
+}
+legend("topleft", legend=c("1960","1970"," 1980", "1990", "2000", 
+                            "2010", "2020"), 
+       col= c("black","purple","red", "blue", "green", 'yellow', 'orange'), lty=1, cex=0.5)
+
+```
+```{r description1}
+# for different selected time periods t, once again, in order to not encounter issues relating to the different 
+# future expectations for different (x) year old, a cohort table was used as this tracked the lives of people of differing ages in time.
+```
+
+Part B Below
+
+```{r pressure2, echo=FALSE}
+#b μx,t the force of mortality of an (x) year old in year t, versus t, 
+# for different selected time periods t
+
+# assume constant force of mortality 
+colors_ages = c("0" = 'black', "10"='purple', "20"='red', "30"='blue', "40"='green', "50"='yellow', "60"='orange', "70"='grey', "80"='cyan')
+
+for (x in c(0, 10, 20, 30, 40, 50, 60, 70, 80)) {
+  forces_of_mortality = Force_of_mortality_b(x, 1960, 1, 2022-1960)
+  if (x == 0) {
+    plot(1960:2021, log(forces_of_mortality), type = "l", xlab = "Year", col='black', ylab = "Force of Mortality", main= "Force of Mortality vs. Year for Ages 0-80", ylim=c(-10, 0))
+  }
+  else {
+    lines(1960:2021, log(forces_of_mortality), type = "l", pch=18, col = colors_ages[as.character(x)])
+  }
+}
+legend("topright", legend=c("0-years-old","10-years-old"," 20-years-old", "30-years-old", "40-years-old", 
+                            "50-years-old", "60-years-old", "70-years-old", "80-years-old"), 
+       col= c("black","purple","red", "blue", "green", 'yellow', 'orange', 'grey', 
+              'cyan'), lty=1, cex=0.4)
+```
+
+Part C Below
+
+```{r description2}
+# part c
+survival_function<-function(x,t){
+  px<-1-DATA$qx[DATA$Year==t]
+  if(x==0&t>=min(DATA$Year)&t<=max(DATA$Year)){
+    survival<-1
+    print(survival)
+  }
+  if(x>=110&t>=min(DATA$Year)&t<=max(DATA$Year)){
+    survival<-0
+    print(survival)
+  }
+  if(x>0&x<110&t>=min(DATA$Year)&t<=max(DATA$Year)){
+    survival<-prod(px[1:x])
+    print(survival)
+  }
+  if(x<0|t<min(DATA$Year)&t>max(DATA$Year)){
+    sprintf("Impossible to calculate the survival function with t=%d and x=%d",t,x)
+  }
+}
+
+colors_years = c("1960" = 'black', "1970"='purple', "1980"='red', "1990"='blue', "2000"='green', "2010"='yellow', "2020"='orange')
+for (t in  c(1960, 1970, 1980, 1990, 2000, 2010, 2020)) {
+  px<-1-DATA$qx[DATA$Year==t]
+  kpx <- cumprod(px[(0 + 1):(108 + 1)])
+  if (t == 1960) {
+    plot(0:108, sqrt(kpx), type='l', xlab = "Age", col='black', ylab = "Survival Probability", main= "Survival Probabilities vs. Age in Various Periods 1960-2020", ylim=c(0,1))
+  }
+  else {
+    lines(0:108, sqrt(kpx), type='l', col=colors_years[as.character(t)])
+  }
+}
+legend("bottomleft", legend=c("1960","1970"," 1980", "1990", "2000", "2010", "2020"), 
+       col= c("black","purple","red", "blue", "green", 'yellow', 'orange'), lty=1, cex=1)
+
+```
+```{r pressure31, echo=FALSE}
+# GOAL: compare the forces of mortality of x year old in 1970 vs 1990 vs 2010
+```
+
+With this, the objective is to determine weather the progression of time and technological improvements, 
+cause the forces of mortality to decrease for all ages. As shown in the graphs, and as could be expected by looking at real world exmaples,
+as time progress, i.e. 1970 -> 1990 -> 2010, medical advancements combined with a myriad of other factors cause a decrease in the forces of mortality the board.
+
+
+Part D below
+
+
+```{r pressure333, echo=FALSE}
+colors_years = c("1960" = 'black', "1970"='purple', "1980"='red', "1990"='blue', "2000"='green', "2010"='yellow', "2020"='orange')
+for (t in  c(1960, 1970, 1980, 1990, 2000, 2010, 2020)) {
+  px<-1-DATA$qx[DATA$Year==t]
+  kpx <- cumprod(px[(0 + 1):(20 + 1)])
+  if (t == 1960) {
+    plot(0:20, kpx, type='l', xlab = "Age", col='black', ylab = "Survival Probability", main= "Survival Probabilities vs. Age of a Newborn Reaching Adulthood (Age 21)", ylim=c(0.8,1))
+  }
+  else {
+    lines(0:20, kpx, type='l', col=colors_years[as.character(t)])
+  }
+}
+legend("bottomleft", legend=c("1960","1970"," 1980", "1990", "2000", "2010", "2020"), 
+       col= c("black","purple","red", "blue", "green", 'yellow', 'orange'), lty=1, cex=1)
+```
